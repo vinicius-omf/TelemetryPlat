@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TelemetryPlatform.Api/TelemetryPlatform.Api.csproj" />
+    <Project Path="src/TelemetryPlatform.Application/TelemetryPlatform.Application.csproj" />
+    <Project Path="src/TelemetryPlatform.Domain/TelemetryPlatform.Domain.csproj" />
+    <Project Path="src/TelemetryPlatform.Infrastructure/TelemetryPlatform.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TelemetryPlatform.IntegrationTests/TelemetryPlatform.IntegrationTests.csproj" />
+    <Project Path="tests/TelemetryPlatform.UnitTests/TelemetryPlatform.UnitTests.csproj" />
+  </Folder>
+</Solution>

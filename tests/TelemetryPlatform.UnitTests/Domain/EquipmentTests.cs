@@ -20,6 +20,16 @@ public sealed class EquipmentTests
         equipment.Id.Version.ShouldBe(7);
     }
 
+    [Fact]
+    public void Create_TruncatesCreatedAtToMicroseconds()
+    {
+        var withSubMicroseconds = Now.AddTicks(1_234_567); // 123456,7 µs
+
+        var equipment = Equipment.Create("AF1-TT-101", "Termopar", "Alto Forno 1", withSubMicroseconds);
+
+        equipment.CreatedAt.ShouldBe(Now.AddTicks(1_234_560));
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

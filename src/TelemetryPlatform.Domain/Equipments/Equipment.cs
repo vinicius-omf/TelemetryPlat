@@ -33,6 +33,10 @@ public sealed partial class Equipment
                 $"Tag inválida: use de 1 a {TagMaxLength} caracteres (letras, números, '-', '_' ou '.').");
         }
 
+        // .NET tem precisão de 100ns, PostgreSQL de 1µs: truncamos para que o valor retornado
+        // na criação seja idêntico ao lido do banco depois.
+        createdAt = createdAt.AddTicks(-(createdAt.Ticks % TimeSpan.TicksPerMicrosecond));
+
         return new Equipment
         {
             // Guid v7 é ordenado por tempo: melhor para índices do banco que Guid.NewGuid().

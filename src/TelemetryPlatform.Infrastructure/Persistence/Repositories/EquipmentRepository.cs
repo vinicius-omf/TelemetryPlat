@@ -10,12 +10,14 @@ internal sealed class EquipmentRepository(TelemetryDbContext dbContext) : IEquip
         dbContext.Equipments.AnyAsync(e => e.Tag == tag, cancellationToken);
 
     public Task<Equipment?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        dbContext.Equipments.AsNoTracking().FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        dbContext.Equipments.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
 
     public async Task<IReadOnlyList<Equipment>> ListAsync(CancellationToken cancellationToken) =>
         await dbContext.Equipments.AsNoTracking().OrderBy(e => e.Tag).ToListAsync(cancellationToken);
 
     public void Add(Equipment equipment) => dbContext.Equipments.Add(equipment);
+
+    public void Delete(Equipment equipment) => dbContext.Equipments.Remove(equipment);
 
     public Task SaveChangesAsync(CancellationToken cancellationToken) => dbContext.SaveChangesAsync(cancellationToken);
 }

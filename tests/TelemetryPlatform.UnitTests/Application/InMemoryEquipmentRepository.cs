@@ -9,7 +9,8 @@ namespace TelemetryPlatform.UnitTests.Application;
 internal sealed class InMemoryEquipmentRepository : IEquipmentRepository
 {
     private readonly List<Equipment> _pending = [];
-
+    private readonly List<Equipment> _pendingToRemove = [];
+    public int SaveChangesCount { get; private set; }
     public List<Equipment> Saved { get; } = [];
 
     public Task<bool> TagExistsAsync(string tag, CancellationToken cancellationToken) =>
@@ -25,8 +26,29 @@ internal sealed class InMemoryEquipmentRepository : IEquipmentRepository
 
     public Task SaveChangesAsync(CancellationToken cancellationToken)
     {
+        SaveChangesCount++;
         Saved.AddRange(_pending);
         _pending.Clear();
+
+        Saved.RemoveAll(e => _pendingToRemove.Contains(e));
+        _pendingToRemove.Clear();
+        
         return Task.CompletedTask;
+    }
+
+    public void Delete(Equipment equipment)
+    {
+        // Removido antes de salvar: o EF desfaz o Add e não envia nada ao banco.
+        if (_pending.Remove(equipment))
+        {
+            return;
+        }
+
+        if (!Saved.Contains(equipment))
+        {
+            throw new InvalidOperationException("Tentativa de remover equipamento que não está salvo.");
+        }
+
+        _pendingToRemove.Add(equipment);
     }
 }

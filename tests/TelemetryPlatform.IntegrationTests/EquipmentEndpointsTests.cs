@@ -61,6 +61,59 @@ public sealed class EquipmentEndpointsTests(TelemetryApiFactory factory) : IClas
     }
 
     [Fact]
+    public async Task Delete_CreateAndDelete_Returns204()
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/equipments", new CreateEquipmentRequest(UniqueTag(), "Termopar cadinho", "Alto Forno 1"), Ct);
+        createResponse.EnsureSuccessStatusCode();
+        EquipmentResponse? created = await createResponse.Content.ReadFromJsonAsync<EquipmentResponse>(Ct);
+    
+        var equipmentId = created?.Id ?? throw new InvalidOperationException("Failed to read created equipment ID.");
+
+        var deleteResponse = await _client.DeleteAsync($"/api/equipments/{equipmentId}", Ct);
+        deleteResponse.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var getResponse = await _client.GetAsync($"/api/equipments/{equipmentId}", Ct);
+        getResponse.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    
+    [Fact]
+    public async Task Delete_WhenEquipmentDoesNotExist_Returns404()
+    {
+        var response = await _client.DeleteAsync($"/api/equipments/{Guid.NewGuid()}", Ct);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Update_CreateThenUpdate_ReturnsUpdatedEquipment()
+    {
+        var createResponse = await _client.PostAsJsonAsync("/api/equipments", new CreateEquipmentRequest(UniqueTag(), "Termopar cadinho", "Alto Forno 1"), Ct);
+        createResponse.EnsureSuccessStatusCode();
+
+        EquipmentResponse? created = await createResponse.Content.ReadFromJsonAsync<EquipmentResponse>(Ct);
+
+        var equipmentId = created?.Id ?? throw new InvalidOperationException("Failed to read created equipment ID.");
+
+        var request = new UpdateEquipmentRequest("Termopar atualizado", "Alto Forno 2");
+
+        var updateResponse = await _client.PutAsJsonAsync($"/api/equipments/{equipmentId}", request, Ct);
+        updateResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        EquipmentResponse? updated = await updateResponse.Content.ReadFromJsonAsync<EquipmentResponse>(Ct);
+        updated.ShouldNotBeNull();
+        updated.Name.ShouldBe("Termopar atualizado");
+        updated.Area.ShouldBe("Alto Forno 2");
+        updated.Tag.ShouldBe(created.Tag); // Tag não deve mudar
+        updated.Id.ShouldBe(equipmentId); // Id não deve mudar
+
+        var fetched = await _client.GetFromJsonAsync<EquipmentResponse>($"/api/equipments/{equipmentId}", Ct);
+        fetched.ShouldBe(updated);
+    }
+
+
+
+    [Fact]
     public async Task Health_ReturnsHealthy()
     {
         var response = await _client.GetAsync("/health", Ct);

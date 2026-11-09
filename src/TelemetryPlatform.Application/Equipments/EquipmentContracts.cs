@@ -5,6 +5,8 @@ namespace TelemetryPlatform.Application.Equipments;
 
 public sealed record CreateEquipmentRequest(string Tag, string Name, string Area);
 
+public sealed record UpdateEquipmentRequest(string Name, string Area);
+
 public sealed record EquipmentResponse(Guid Id, string Tag, string Name, string Area, DateTimeOffset CreatedAt)
 {
     public static EquipmentResponse From(Equipment equipment) =>

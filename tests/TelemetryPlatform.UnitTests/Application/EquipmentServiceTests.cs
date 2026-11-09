@@ -2,6 +2,7 @@ using Microsoft.Extensions.Time.Testing;
 using Shouldly;
 using TelemetryPlatform.Application.Common;
 using TelemetryPlatform.Application.Equipments;
+using TelemetryPlatform.Domain.Common;
 
 namespace TelemetryPlatform.UnitTests.Application;
 
@@ -53,4 +54,96 @@ public sealed class EquipmentServiceTests
         result.IsSuccess.ShouldBeFalse();
         result.Error.Type.ShouldBe(ErrorType.NotFound);
     }
+
+    [Fact]
+    public async Task DeleteAsync_WhenExists_RemovesEquipment()
+    {
+        var createResult = await _service.CreateAsync(
+            new CreateEquipmentRequest("af1-tt-101", "Termopar cadinho", "Alto Forno 1"),
+            TestContext.Current.CancellationToken);
+
+        _repository.Saved.ShouldHaveSingleItem();
+
+        createResult.ShouldNotBeNull();
+        createResult.Value.ShouldNotBeNull();
+        var equipmentId = createResult.Value.Id;
+
+        var deleteResult = await _service.DeleteAsync(equipmentId, TestContext.Current.CancellationToken);
+        deleteResult.IsSuccess.ShouldBeTrue();
+        _repository.Saved.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WhenEquipmentDoesNotExist_ReturnsNotFound()
+    {
+        var result = await _service.DeleteAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error.Type.ShouldBe(ErrorType.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenExists_UpdatesNameAndArea()
+    {
+        var createResult = await _service.CreateAsync(
+            new CreateEquipmentRequest("af1-tt-101", "Termopar cadinho", "Alto Forno 1"),
+            TestContext.Current.CancellationToken);
+
+        createResult.IsSuccess.ShouldBeTrue();
+
+        var equipmentId = createResult.Value.Id;
+        var updateResult = await _service.UpdateAsync(
+            equipmentId,
+            new UpdateEquipmentRequest("Termopar atualizado", "Alto Forno 2"),
+            TestContext.Current.CancellationToken);
+
+        updateResult.IsSuccess.ShouldBeTrue();
+
+        var updatedEquipment = await _service.GetByIdAsync(equipmentId, TestContext.Current.CancellationToken);
+        updatedEquipment.IsSuccess.ShouldBeTrue();
+        updatedEquipment.Value.Name.ShouldBe("Termopar atualizado");
+        updatedEquipment.Value.Area.ShouldBe("Alto Forno 2");
+        updatedEquipment.Value.Tag.ShouldBe(createResult.Value.Tag);
+        updatedEquipment.Value.Id.ShouldBe(equipmentId);
+        
+        _repository.SaveChangesCount.ShouldBe(2); // Create + Update
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WhenMissing_ReturnsNotFound()
+    {
+        var result = await _service.UpdateAsync(
+            Guid.NewGuid(),
+            new UpdateEquipmentRequest("Termopar atualizado", "Alto Forno 2"),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.ShouldBeFalse();
+        result.Error.Type.ShouldBe(ErrorType.NotFound);
+    }
+
+    [Theory]
+    [InlineData("", "Alto Forno 2")]
+    [InlineData("Termopar", "   ")]
+    public async Task Update_WithMissingNameOrArea_Throws(string name, string area)
+    {
+        
+        var createdResult = await _service.CreateAsync(
+            new CreateEquipmentRequest("af1-tt-101", "Termopar cadinho", "Alto Forno 1"),
+            TestContext.Current.CancellationToken);
+        createdResult.IsSuccess.ShouldBeTrue();
+        createdResult.Value.ShouldNotBeNull();
+        var equipmentId = createdResult.Value.Id;
+
+        var equipment = await _service.GetByIdAsync(equipmentId, TestContext.Current.CancellationToken);
+        equipment.IsSuccess.ShouldBeTrue();
+        equipment.Value.ShouldNotBeNull();
+
+        await Should.ThrowAsync<DomainException>(() => _service.UpdateAsync(
+            equipmentId,
+            new UpdateEquipmentRequest(name, area),
+            TestContext.Current.CancellationToken));
+    }
 }
+  
+  
+    

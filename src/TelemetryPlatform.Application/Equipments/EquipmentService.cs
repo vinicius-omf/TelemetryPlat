@@ -37,4 +37,32 @@ public sealed class EquipmentService(IEquipmentRepository repository, TimeProvid
         var equipments = await repository.ListAsync(cancellationToken);
         return [.. equipments.Select(EquipmentResponse.From)];
     }
+    
+    public async Task<Result<bool>> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var equipment = await repository.GetByIdAsync(id, cancellationToken);
+
+        if (equipment is null)
+        {
+            return EquipmentErrors.NotFound(id);
+        }
+        repository.Delete(equipment);
+        await repository.SaveChangesAsync(cancellationToken);
+
+        return true;
+    }
+
+    public async Task<Result<EquipmentResponse>> UpdateAsync(Guid id, UpdateEquipmentRequest request, CancellationToken cancellationToken)
+    {
+        var equipment = await repository.GetByIdAsync(id, cancellationToken);
+        if (equipment is null)
+        {
+            return EquipmentErrors.NotFound(id);
+        }
+
+        equipment.Update(request.Name, request.Area);
+        await repository.SaveChangesAsync(cancellationToken);
+
+        return EquipmentResponse.From(equipment); 
+    }
 }

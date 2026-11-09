@@ -48,6 +48,15 @@ public sealed partial class Equipment
         };
     }
 
+    public void Update(string name, string area)
+    {
+        var validName = Required(name, nameof(Name), NameMaxLength);
+        var validArea = Required(area, nameof(Area), AreaMaxLength);
+
+        Name = validName;
+        Area = validArea;
+    }
+
     private static string Required(string value, string field, int maxLength)
     {
         var trimmed = value?.Trim() ?? string.Empty;

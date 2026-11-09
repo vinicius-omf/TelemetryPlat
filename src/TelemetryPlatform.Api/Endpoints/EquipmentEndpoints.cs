@@ -19,6 +19,8 @@ internal static class EquipmentEndpoints
         group.MapPost("/", CreateAsync);
         group.MapGet("/", ListAsync);
         group.MapGet("/{id:guid}", GetByIdAsync).WithName(GetByIdRoute);
+        group.MapDelete("/{id:guid}", DeleteAsync);
+        group.MapPut("/{id:guid}", UpdateAsync);
 
         return app;
     }
@@ -41,6 +43,22 @@ internal static class EquipmentEndpoints
         Guid id, EquipmentService service, CancellationToken cancellationToken)
     {
         var result = await service.GetByIdAsync(id, cancellationToken);
+
+        return result.IsSuccess ? TypedResults.Ok(result.Value) : result.Error.ToProblem();
+    }
+
+    private static async Task<Results<NoContent, ProblemHttpResult>> DeleteAsync(
+        Guid id, EquipmentService service, CancellationToken cancellationToken)
+    {
+        var result = await service.DeleteAsync(id, cancellationToken);
+
+        return result.IsSuccess ? TypedResults.NoContent() : result.Error.ToProblem();
+    }
+
+    private static async Task<Results<Ok<EquipmentResponse>, ProblemHttpResult>> UpdateAsync(
+        Guid id, UpdateEquipmentRequest request, EquipmentService service, CancellationToken cancellationToken)
+    {
+        var result = await service.UpdateAsync(id, request, cancellationToken);
 
         return result.IsSuccess ? TypedResults.Ok(result.Value) : result.Error.ToProblem();
     }

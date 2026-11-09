@@ -13,4 +13,5 @@ public interface IEquipmentRepository
     Task<IReadOnlyList<Equipment>> ListAsync(CancellationToken cancellationToken);
     void Add(Equipment equipment);
     Task SaveChangesAsync(CancellationToken cancellationToken);
+    void Delete(Equipment equipment);
 }
